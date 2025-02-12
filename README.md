@@ -20,3 +20,8 @@ Example Output:
 ```
 []
 ```
+
+# Caution
+For automatication, automation of the process, refer to the following link.
+
+[Reference](https://employeecoding.tistory.com/67)
