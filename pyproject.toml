@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "parsing-server"
+version = "0.1.0"
+description = ""
+authors = ["JakeFRCSE <eppi001004@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.3"
+pywin32-ctypes = "^0.2.3"
+pypiwin32 = "^223"
+python-magic = "^0.4.27"
+python-magic-bin = "^0.4.14"
+frontend = "^0.0.3"
+pymupdf = "^1.25.3"
+pymupdf4llm = "^0.0.17"
+pypdf2htmlex = "^1.8"
+pdfplumber = "0.11.4"
+pptxtopdf = "^0.0.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
