@@ -1,4 +1,19 @@
-# How to use
+# FastAPI request format
+|function|method|url|request|response|status|
+|-------------|----|---------------|-----------|---------|--------------|
+|extract_texts|GET|/texts|request body|{ "extracted_texts" : texts }|200:OK|
+|extract_tables|GET|/tables|request body|{"extracted_tables" : tables}|200:OK|
+|extract_texts_tables|GET|/texts_tables|request body|{"extracted_texts" : texts, "extracted_tables" : tables}|200:OK|
+
+request body:
+```
+{
+  "url":"..."
+}
+```
+
+
+# How to use FileProcessor
 
 1. Initialize FileProcessor Instance with TableExtractionStrategy enum type.
 ```
@@ -20,6 +35,10 @@ Example Output:
 ```
 []
 ```
+
+# TODO
+- Filtering Sparse Output
+
 
 # Caution
 For automatication, automation of the process, refer to the following link.
