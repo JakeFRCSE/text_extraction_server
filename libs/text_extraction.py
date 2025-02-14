@@ -6,7 +6,7 @@ import win32com.client as win32
 import re
 import pdfplumber
 import pymupdf
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional, Sequence
 from pptxtopdf import convert
 from enum import Enum, unique
 
@@ -122,7 +122,7 @@ class FileProcessor():
         refined_text = re.sub(r'\n(.{1})\n', r'\1',refined_text)
         return refined_text
 
-    def format_table(self, table:List[List[str]])->List[str]:
+    def format_table(self, table:List[List[Optional[str]]])->List[str]:
         formatted_table = []
         for row in table:
             formatted_row = []
@@ -132,7 +132,7 @@ class FileProcessor():
             formatted_table.append(formatted_row)
         return formatted_table
 
-    def extract_tables_from_pdf(self)->List[Dict[int, str]]:
+    def extract_tables_pdfplumber(self)->List[Dict[int, str]]:
         tables = []
 
         with pdfplumber.open(self.pdf_path) as pdf:
@@ -157,7 +157,12 @@ class FileProcessor():
         doc.save(self.pdf_wo_table_path)
         doc.close()
 
-    def get_text_refined(self)->List[str]:
+    def get_texts_refined(self)->List[str]:
+        doc = pymupdf.open(self.pdf_path)
+        refined_extracted_text = [self.refine_text(page.get_text()) for page in doc]
+        return refined_extracted_text
+    
+    def get_texts_refined_wo_table(self)->List[str]:
         doc = pymupdf.open(self.pdf_wo_table_path)
         refined_extracted_text = [self.refine_text(page.get_text()) for page in doc]
         return refined_extracted_text
@@ -165,16 +170,18 @@ class FileProcessor():
     def clear(self)->None:
         paths = [self.download_path, self.extension_path, self.pdf_path, self.pdf_wo_table_path]
         for path in paths:
-            self.clear_file_path(path)
+            if path:
+                self.clear_file_path(path)
         self.extension = None
         self.extension_path = None
 
-    def extract_texts(self, url:str)->List[str]:
+    def prepare_pdf(self, url:str)->bool:
         self.clear_file_path(self.download_path)
         self.download_file(url)
         self.detect_file_type()
         if self.extension is None:
-            return []
+            self.clear()
+            return False
         self.clear_file_path(self.extension_path)
         self.attach_extension()
 
@@ -187,22 +194,48 @@ class FileProcessor():
             self.convert_ppt_to_pdf()
         if self.extension != ".pdf":
             self.clear()
-            return []
-        
-        tables = []
-        if self.table_exctraction_strategy == TableExtractionStrategy.PDFPLUMBER:
-            tables = self.extract_tables_from_pdf()
-        elif self.table_exctraction_strategy == TableExtractionStrategy.YOLO:
-            #Yolo extraction
-            pass
-        self.remove_tables()
+            return False
+        return True
 
-        texts = self.get_text_refined()
-        for table in tables:
-            texts.append(table.get('table', None))
-
-        self.clear()
+    def extract_texts(self, url:str)->List | List[str]:
+        texts = []
+        if self.prepare_pdf(url):
+            texts = self.get_texts_refined()
         return texts
+
+    def extract_tables(self, url:str)->List[Optional[Dict[int, str]]]:
+        tables_list = []
+        if self.prepare_pdf(url):
+            if self.table_exctraction_strategy == TableExtractionStrategy.PDFPLUMBER:
+                tables = self.extract_tables_pdfplumber()
+            elif self.table_exctraction_strategy == TableExtractionStrategy.YOLO:
+                #Yolo extraction
+                pass
+            for table in tables:
+                    tables_list.append(table.get('table', None))
+        return tables_list
+
+    def extract_texts_tables(self, url:str)->Tuple[List[Optional[str]], List[Optional[List[str]]]]:
+        texts = []
+        tables = []
+        if self.prepare_pdf(url):
+        
+            tables = self.extract_tables(url)
+            self.remove_tables()
+            texts = self.get_texts_refined_wo_table()
+
+        
+        return (texts, tables)
+
+    def set_table_strategy_yolo(self)->bool:
+        self.table_exctraction_strategy = TableExtractionStrategy.YOLO
+        print("Successfully Changed to YOLO strategy")
+        return True
+
+    def set_table_strategy_pdfplmbr(self)->bool:
+        self.table_exctraction_strategy = TableExtractionStrategy.PDFPLUMBER
+        print("Successfully Changed to PDFPLUMBER strategy")
+        return True
 
 
 if __name__ == "__main__":
