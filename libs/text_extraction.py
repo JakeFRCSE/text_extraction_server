@@ -122,14 +122,16 @@ class FileProcessor():
         refined_text = re.sub(r'\n(.{1})\n', r'\1',refined_text)
         return refined_text
 
-    def format_table(self, table:List[List[Optional[str]]])->List[str]:
+    def format_table(self, table:List[List[Optional[str]]])->List[Optional[str]]:
         formatted_table = []
         for row in table:
             formatted_row = []
             for cell in row:
-                cell = self.refine_text(str(cell))
-                formatted_row.append(cell)
-            formatted_table.append(formatted_row)
+                if cell and cell != "None":
+                    cell = self.refine_text(str(cell))
+                    formatted_row.append(cell)
+            if formatted_row:
+                formatted_table.append(formatted_row)
         return formatted_table
 
     def extract_tables_pdfplumber(self)->List[Dict[int, str]]:
@@ -160,11 +162,13 @@ class FileProcessor():
     def get_texts_refined(self)->List[str]:
         doc = pymupdf.open(self.pdf_path)
         refined_extracted_text = [self.refine_text(page.get_text()) for page in doc]
+        refined_extracted_text = list(filter(None, refined_extracted_text))
         return refined_extracted_text
     
     def get_texts_refined_wo_table(self)->List[str]:
         doc = pymupdf.open(self.pdf_wo_table_path)
         refined_extracted_text = [self.refine_text(page.get_text()) for page in doc]
+        refined_extracted_text = list(filter(None, refined_extracted_text))
         return refined_extracted_text
 
     def clear(self)->None:
@@ -212,7 +216,8 @@ class FileProcessor():
                 #Yolo extraction
                 pass
             for table in tables:
-                    tables_list.append(table.get('table', None))
+                    if table.get('table', None):
+                        tables_list.append(table.get('table', None))
         return tables_list
 
     def extract_texts_tables(self, url:str)->Tuple[List[Optional[str]], List[Optional[List[str]]]]:
